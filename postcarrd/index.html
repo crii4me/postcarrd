@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Postcard — Send a real one</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Lato:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <!-- ── AUTH ── -->
+  <section id="screen-auth">
+    <div class="auth-wrap">
+      <div class="stamp-deco" aria-hidden="true">✉</div>
+      <h1>Postcard</h1>
+      <p class="sub">Sign in to send and receive postcards.</p>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Sign in</button>
+        <button class="auth-tab" id="tab-signup" onclick="switchAuthTab('signup')">Create account</button>
+      </div>
+
+      <div class="auth-form">
+        <div class="meta-field" id="field-name" style="display:none">
+          <label>Your display name</label>
+          <input type="text" id="auth-name" placeholder="Alex" />
+        </div>
+        <div class="meta-field">
+          <label>Email</label>
+          <input type="email" id="auth-email" placeholder="you@email.com" />
+        </div>
+        <div class="meta-field">
+          <label>Password</label>
+          <input type="password" id="auth-password" placeholder="••••••••" />
+        </div>
+        <p class="auth-error hidden" id="auth-error"></p>
+        <button class="btn-primary" style="width:100%;margin-top:1rem" id="auth-btn" onclick="handleAuth()">Sign in</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── LANDING ── -->
+  <section id="screen-landing" class="hidden">
+    <div class="landing-inner">
+      <div class="stamp-deco" aria-hidden="true">✉</div>
+      <h1>Send a postcard<br>someone will remember.</h1>
+      <p class="sub">Upload a photo, write your message, address it.<br>They open an envelope. It feels like magic.</p>
+      <button class="btn-primary" onclick="goTo('screen-compose')">Create your postcard</button>
+    </div>
+  </section>
+
+  <!-- ── COMPOSE ── -->
+  <section id="screen-compose" class="hidden">
+    <div class="compose-wrap">
+      <h2 class="screen-title">Design your postcard</h2>
+
+      <div class="card-label">Front — your photo</div>
+      <div class="postcard-front" id="postcard-front">
+        <div class="front-upload-area" onclick="document.getElementById('photo-input').click()">
+          <div class="upload-hint" id="upload-hint">
+            <span class="upload-icon">📷</span>
+            <span>Click to add your photo</span>
+          </div>
+          <img id="front-photo" src="" alt="Your postcard photo" />
+        </div>
+        <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhoto(event)" />
+      </div>
+
+      <div class="card-label" style="margin-top:2rem;">Back — message & address</div>
+      <div class="postcard-back">
+        <div class="back-left">
+          <div class="back-corner-text">THIS SPACE FOR WRITING MESSAGES.</div>
+          <textarea id="message-text" class="message-area" maxlength="300"
+            placeholder="Write your message here...&#10;&#10;Wish you were here!"></textarea>
+        </div>
+        <div class="back-divider">
+          <div class="back-divider-label">C. T. COLORCHROME</div>
+        </div>
+        <div class="back-right">
+          <div class="back-right-top">
+            <div class="postcard-title-block">
+              <span class="postcard-word">POSTCARD</span>
+              <span class="address-label">THIS SPACE FOR ADDRESS ONLY.</span>
+            </div>
+            <div class="stamp-box"><span>PLACE</span><span>STAMP</span><span>HERE</span></div>
+          </div>
+          <div class="address-lines">
+            <input type="text" class="addr-line" id="addr1" placeholder="Recipient name" />
+            <input type="text" class="addr-line" id="addr2" placeholder="Street address" />
+            <input type="text" class="addr-line" id="addr3" placeholder="City, postcode" />
+            <input type="text" class="addr-line" id="addr4" placeholder="Country" />
+          </div>
+        </div>
+      </div>
+
+      <div class="meta-row">
+        <div class="meta-field">
+          <label>Recipient's email <span style="font-size:0.75rem;color:#888">(they must have an account)</span></label>
+          <input type="email" id="to-email" placeholder="sarah@email.com" />
+        </div>
+      </div>
+
+      <p class="auth-error hidden" id="send-error"></p>
+
+      <div class="action-row">
+        <button class="btn-ghost" onclick="goTo('screen-landing')">← Back</button>
+        <button class="btn-primary" id="send-btn" onclick="sendCard()">Seal & send ✉</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── INBOX ── -->
+  <section id="screen-inbox" class="hidden">
+    <div class="inbox-wrap">
+      <div class="inbox-header">
+        <h2>Your mailbox</h2>
+        <span class="inbox-badge" id="inbox-count">loading…</span>
+      </div>
+      <div class="inbox-list" id="inbox-list">
+        <p style="color:#888;font-family:'Special Elite',serif;padding:1rem 0">Loading…</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ENVELOPE ── -->
+  <section id="screen-envelope" class="hidden">
+    <div class="envelope-scene">
+      <p class="env-prompt" id="env-prompt">You have a postcard! Tap to open it.</p>
+      <div class="envelope-wrap" onclick="openEnvelope()">
+        <div class="env-body">
+          <div class="env-flap" id="env-flap"></div>
+          <div class="env-tri-left"></div>
+          <div class="env-tri-right"></div>
+          <div class="env-bottom"></div>
+          <div class="env-stamp-deco">❤</div>
+          <div class="env-to-addr" id="env-to-addr">To: —</div>
+        </div>
+      </div>
+      <div class="revealed-card" id="revealed-card">
+        <div class="rev-front" id="rev-front"></div>
+        <div class="rev-back">
+          <div class="back-left">
+            <div class="back-corner-text">THIS SPACE FOR WRITING MESSAGES.</div>
+            <div class="rev-message" id="rev-message"></div>
+          </div>
+          <div class="back-divider"><div class="back-divider-label">C. T. COLORCHROME</div></div>
+          <div class="back-right">
+            <div class="back-right-top">
+              <div class="postcard-title-block">
+                <span class="postcard-word">POSTCARD</span>
+                <span class="address-label">THIS SPACE FOR ADDRESS ONLY.</span>
+              </div>
+              <div class="stamp-box"><span>PLACE</span><span>STAMP</span><span>HERE</span></div>
+            </div>
+            <div class="address-lines rev-address" id="rev-address"></div>
+          </div>
+        </div>
+      </div>
+      <button class="btn-ghost" style="margin-top:2rem;" onclick="goTo('screen-inbox')">← Back to mailbox</button>
+    </div>
+  </section>
+
+  <!-- ── NAV ── -->
+  <nav class="topnav" id="topnav" style="display:none">
+    <span class="nav-logo" onclick="goTo('screen-landing')">✉ Postcard</span>
+    <div class="nav-links">
+      <span class="nav-user" id="nav-user"></span>
+      <button class="nav-link" onclick="goTo('screen-compose')">Create</button>
+      <button class="nav-link" onclick="goTo('screen-inbox')">Mailbox</button>
+      <button class="nav-link" onclick="signOut()">Sign out</button>
+    </div>
+  </nav>
+
+  <script src="app.js"></script>
+</body>
+</html>
